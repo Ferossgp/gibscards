@@ -12,3 +12,9 @@ declare module "@remix-run/cloudflare" {
     };
   }
 }
+
+declare global {
+  interface Window {
+    ENV: unknown;
+  }
+}
