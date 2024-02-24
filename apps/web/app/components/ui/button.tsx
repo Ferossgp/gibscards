@@ -27,10 +27,14 @@ const buttonVariants = cva(
         lg: "h-11  px-8",
         icon: "h-10 w-10",
       },
+      selected: {
+        true: "translate-x-0 translate-y-0",
+      }
     },
     defaultVariants: {
       variant: "default",
       size: "default",
+      selected: false,
     },
   }
 )
@@ -56,15 +60,16 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
   VariantProps<typeof buttonVariants> {
   asChild?: boolean
+  selected?: boolean
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, selected, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
     return (
       <div className={cn(containerVariants({ size }))}>
         <Comp
-          className={cn(buttonVariants({ variant, size, className }))}
+          className={cn(buttonVariants({ variant, size, selected, className }))}
           ref={ref}
           {...props}
         />
