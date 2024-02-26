@@ -9,13 +9,19 @@
     "dev": "remix vite:dev",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
     "start": "wrangler pages dev ./build/client",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "types": "wrangler types"
   },
   "dependencies": {
+    "@dynamic-labs/ethereum": "^1.1.4",
+    "@dynamic-labs/ethereum-aa": "^1.1.4",
+    "@dynamic-labs/sdk-react-core": "^1.1.4",
+    "@dynamic-labs/wagmi-connector": "^1.1.4",
     "@radix-ui/react-slot": "^1.0.2",
-    "@remix-run/cloudflare": "^2.6.0",
-    "@remix-run/cloudflare-pages": "^2.6.0",
-    "@remix-run/react": "^2.6.0",
+    "@remix-run/cloudflare": "^2.7.2",
+    "@remix-run/cloudflare-pages": "^2.7.2",
+    "@remix-run/react": "^2.7.2",
+    "@zerodev/sdk": "^5.1.6",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "isbot": "^4.1.0",
@@ -28,12 +34,13 @@
     "spin-delay": "^1.2.0",
     "tailwind-merge": "^2.2.1",
     "tailwindcss-animate": "^1.0.7",
+    "usehooks-ts": "^2.15.1",
     "viem": "^2.7.9",
     "zod": "^3.22.4"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20230518.0",
-    "@remix-run/dev": "^2.6.0",
+    "@remix-run/dev": "^2.7.2",
     "@types/react": "^18.2.20",
     "@types/react-dom": "^18.2.7",
     "@typescript-eslint/eslint-plugin": "^6.7.4",
@@ -50,6 +57,7 @@
     "tailwindcss": "^3.4.1",
     "typescript": "^5.1.6",
     "vite": "^5.0.0",
+    "vite-plugin-node-polyfills": "^0.21.0",
     "vite-tsconfig-paths": "^4.3.0",
     "wrangler": "^3.24.0"
   },

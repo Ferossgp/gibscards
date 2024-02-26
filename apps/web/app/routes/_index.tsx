@@ -1,58 +1,9 @@
-import {
-  json,
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-} from "@remix-run/cloudflare";
 import { Link } from "@remix-run/react";
 import { Button } from "~/components/ui/button";
-import { createToastHeaders } from "~/utils/toast.server";
-
-const key = "__my-key__";
-
-export async function loader({ context }: LoaderFunctionArgs) {
-  const { MY_KV } = context.env;
-  const value = await MY_KV.get(key);
-  return json({ value });
-}
-
-export async function action({ request, context }: ActionFunctionArgs) {
-  const { MY_KV: myKv } = context.env;
-
-  if (request.method === "POST") {
-    const formData = await request.formData();
-    const value = formData.get("value") as string;
-    await myKv.put(key, value);
-
-    return json(
-      { success: true },
-      {
-        headers: await createToastHeaders({
-          description: "Value created!",
-          type: "success",
-        }, context.env),
-      }
-    );
-  }
-
-  if (request.method === "DELETE") {
-    await myKv.delete(key);
-    return json(
-      { success: true },
-      {
-        headers: await createToastHeaders({
-          description: "Value deleted!",
-          type: "success",
-        }, context.env),
-      }
-    );
-  }
-
-  throw new Error(`Method not supported: "${request.method}"`);
-}
 
 export default function Index() {
   return (
-    <div className="mx-auto grid w-full max-w-6xl min-h-screen py-8">
+    <div className="mx-auto grid w-full max-w-6xl min-h-[90vh] pb-8">
       <div className="p-4 overflow-hidden relative rounded-3xl border-2 border-neutral-900 bg-[#f3f2fa] grid grid-cols-2 gap-x-6 w-full h-full">
         <div className="group animate-in ease-in-out slide-in-from-left-24 fade-in-75 duration-500 relative border-2 rounded-2xl border-neutral-900 overflow-hidden bg-[#6b66da]">
           <div className="absolute bottom-0 left-0 -z-0 opacity-30 w-2/3 transition-all duration-1000 ease-in-out -translate-x-44 translate-y-16 scale-90 group-hover:translate-y-0 group-hover:translate-x-0 group-hover:scale-100">
@@ -61,7 +12,7 @@ export default function Index() {
           <div className="grid grid-rows-3 gap-6 px-4 py-8 h-full z-10">
             <div className="row-span-2 flex flex-col gap-4">
               <h1 className="text-5xl font-bold text-primary-foreground">Gift the ability to transact.</h1>
-              <h3 className="text-xl text-[#dedeeb]">Do not just talk about onboarding the next billion. The best way is to start onboarding your friends and family through a gift.</h3>
+              <h3 className="text-xl text-[#dedeeb]">Invite the next billion in web3. Onboard your friends and family with a gift.</h3>
             </div>
             <div>
               <Button asChild>

@@ -13,9 +13,11 @@ import { Toaster } from "./components/ui/sonner";
 import './globals.css';
 import { combineHeaders } from "./utils/headers";
 import { getToast } from "./utils/toast.server";
+import { Web3Provider } from "./context/Web3Provider";
+import { Header } from "./components/header";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
-  const { toast, headers: toastHeaders } = await getToast(request, context.env)
+  const { toast, headers: toastHeaders } = await getToast(request, context.cloudflare.env)
 
   return json({
     toast,
@@ -32,7 +34,10 @@ export default function App() {
 
   return (
     <Document env={data.ENV}>
-      <Outlet />
+      <Web3Provider>
+        <Header />
+        <Outlet />
+      </Web3Provider>
       <ScrollRestoration />
       <Scripts />
       <Toaster closeButton position="top-right" />
@@ -54,7 +59,7 @@ function Document({
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
         <link href="https://fonts.googleapis.com/css2?family=Work+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet" />
         <Links />
       </head>
