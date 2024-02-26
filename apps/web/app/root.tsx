@@ -15,6 +15,8 @@ import { combineHeaders } from "./utils/headers";
 import { getToast } from "./utils/toast.server";
 import { Web3Provider } from "./context/Web3Provider";
 import { Header } from "./components/header";
+import { ThirdwebProvider } from "@thirdweb-dev/react";
+import { Sepolia } from "@thirdweb-dev/chains";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const { toast, headers: toastHeaders } = await getToast(request, context.cloudflare.env)
@@ -22,6 +24,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   return json({
     toast,
     ENV: {
+      THIRD_CLIENT: context.cloudflare.env.THIRD_CLIENT,
     },
   }, {
     headers: combineHeaders(toastHeaders),
@@ -35,8 +38,13 @@ export default function App() {
   return (
     <Document env={data.ENV}>
       <Web3Provider>
-        <Header />
-        <Outlet />
+        <ThirdwebProvider
+          activeChain={Sepolia}
+          clientId={data.ENV.THIRD_CLIENT}
+        >
+          <Header />
+          <Outlet />
+        </ThirdwebProvider>
       </Web3Provider>
       <ScrollRestoration />
       <Scripts />

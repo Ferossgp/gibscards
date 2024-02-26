@@ -8,24 +8,23 @@ import {
 } from "@remix-run/cloudflare";
 import { useActionData, useSubmit } from "@remix-run/react";
 import { useUserOperation } from "~/hooks/use-user-op";
-import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
-import { encodeFunctionData } from "viem";
-
-const key = "__my-key__";
+import { nanoid } from "nanoid";
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const { MY_KV } = context.cloudflare.env
 
+  const uniqueId = nanoid();
+
   if (request.method === "POST") {
     const formData = await request.formData();
     const value = formData.get("message") as string;
-    await MY_KV.put(key, value);
+    await MY_KV.put(uniqueId, value);
 
     return json(
-      { success: true },
+      { success: true, cardId: uniqueId },
       {
         headers: await createToastHeaders({
-          description: "Value created!",
+          description: "Your gift card has been issued successfully! 🎉",
           type: "success",
         }, context.cloudflare.env),
       }
@@ -34,17 +33,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
   throw new Error(`Method not supported: "${request.method}"`);
 }
-const contractABI = [
-  {
-    inputs: [{ internalType: "address", name: "_to", type: "address" }],
-    name: "mint",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-];
-
-const contractAddress = "0x34bE7f35132E97915633BC1fc020364EA5134863";
 
 const VALUES = [10, 50, 100, 150]
 export default function Index() {
@@ -53,30 +41,26 @@ export default function Index() {
   const submit = useSubmit();
   const data = useActionData<typeof action>();
   const sendUserOperation = useUserOperation();
-  const { primaryWallet } = useDynamicContext();
 
   const onSubmit = async () => {
-
     const data = await sendUserOperation([{
-      data: encodeFunctionData({
-        abi: contractABI,
-        args: [primaryWallet?.address],
-        functionName: "mint",
-      }),
-      target: contractAddress,
+      data: '0x0',
+      target: '0x0',
     }]);
 
     console.log(data);
+
     const formData = new FormData();
     formData.append("message", message);
+    formData.append("hash", data?.hash || "");
     formData.append("value", selected?.toString() || "");
 
-    // submit(formData, { method: "post" });
+    submit(formData, { method: "post" });
   }
 
   if (data) {
     return (
-      <div>Success</div>
+      <div>Success {data.cardId}</div>
     )
   }
 

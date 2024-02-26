@@ -23,6 +23,9 @@ module.exports = {
   // Base config
   extends: ["eslint:recommended"],
 
+  rules: {
+    'react/prop-types': 'off',
+  },
   overrides: [
     // React
     {

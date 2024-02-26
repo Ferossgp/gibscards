@@ -13,7 +13,7 @@ export const Header: React.FC = () => {
         </div>
       ) : (
         <DynamicConnectButton>
-          <Button variant="outline">Connect Wallet</Button>
+          <Button variant="outline">Connect</Button>
         </DynamicConnectButton>
       )}
     </div>
