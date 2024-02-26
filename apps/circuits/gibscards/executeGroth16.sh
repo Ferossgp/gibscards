@@ -40,8 +40,8 @@ echo "----- Contribute to the phase 2 of the ceremony -----"
 snarkjs zkey contribute ${CIRCUIT}_0000.zkey ${CIRCUIT}_final.zkey --name="1st Contributor Name" -v -e="some random text"
 
 echo "----- Export the verification key -----"
-Export the verification key
-snarkjs zkey export verificationkey ${CIRCUIT}_final.zkey verification_key.json
+# Export the verification key
+snarkjs zkey export verificationkey ${CIRCUIT}_final.zkey ${OUTPUT}/verification_key.json
 
 # echo "----- Generate zk-proof -----"
 # Generate a zk-proof associated to the circuit and the witness. This generates proof.json and public.json
