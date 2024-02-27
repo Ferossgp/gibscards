@@ -13,10 +13,9 @@ import { Toaster } from "./components/ui/sonner";
 import './globals.css';
 import { combineHeaders } from "./utils/headers";
 import { getToast } from "./utils/toast.server";
-import { Web3Provider } from "./context/Web3Provider";
+import { Web3Provider } from "./context/Web3Provider.client";
 import { Header } from "./components/header";
-import { ThirdwebProvider } from "@thirdweb-dev/react";
-import { Sepolia } from "@thirdweb-dev/chains";
+import { ClientOnly } from "remix-utils/client-only";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const { toast, headers: toastHeaders } = await getToast(request, context.cloudflare.env)
@@ -37,15 +36,14 @@ export default function App() {
 
   return (
     <Document env={data.ENV}>
-      <Web3Provider>
-        <ThirdwebProvider
-          activeChain={Sepolia}
-          clientId={data.ENV.THIRD_CLIENT}
-        >
-          <Header />
-          <Outlet />
-        </ThirdwebProvider>
-      </Web3Provider>
+      <ClientOnly fallback={null}>
+        {() => (
+          <Web3Provider clientId={data.ENV.THIRD_CLIENT}>
+            <Header />
+            <Outlet />
+          </Web3Provider>
+        )}
+      </ClientOnly>
       <ScrollRestoration />
       <Scripts />
       <Toaster closeButton position="top-right" />

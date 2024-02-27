@@ -21,7 +21,7 @@ export const toastSessionStorage = ({ SESSION_SECRET, ENV }: AppLoadContext['env
     sameSite: 'lax',
     path: '/',
     httpOnly: true,
-    secrets: SESSION_SECRET.split(','),
+    secrets: SESSION_SECRET?.split(','),
     secure: ENV === 'production',
   },
 })

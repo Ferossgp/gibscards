@@ -2,14 +2,17 @@
 import {
   DynamicContextProvider,
 } from "@dynamic-labs/sdk-react-core";
-
+import { ThirdwebProvider } from "@thirdweb-dev/react";
+import { Sepolia } from "@thirdweb-dev/chains";
 import { EthereumWalletConnectors } from "@dynamic-labs/ethereum";
 import { ZeroDevSmartWalletConnectors } from "@dynamic-labs/ethereum-aa";
 
 export function Web3Provider({
-  children
+  children,
+  clientId
 }: {
   children: React.ReactNode;
+  clientId: string;
 }) {
   return (
     <DynamicContextProvider
@@ -18,7 +21,13 @@ export function Web3Provider({
         walletConnectors: [EthereumWalletConnectors, ZeroDevSmartWalletConnectors],
       }}
     >
-      {children}
+      <ThirdwebProvider
+        activeChain={Sepolia}
+        clientId={clientId}
+      >
+        {children}
+      </ThirdwebProvider>
+
     </DynamicContextProvider>
   );
 }
