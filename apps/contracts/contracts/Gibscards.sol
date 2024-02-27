@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface IVerifier {
     function verifyProof(
@@ -16,13 +17,16 @@ interface IVerifier {
 struct Commitment {
     address sender;
     uint256 createdAt;
+    uint256 sentAt;
     address recipient;
     uint256 denomination;
     bool isUsed;
     IERC20 token;
 }
 
-contract Gibscards is ReentrancyGuard{
+contract Gibscards is ReentrancyGuard {
+    using SafeERC20 for IERC20;
+
     address public verifierAddr;
 
     mapping(bytes32 => bool) public nullifierHashes;
@@ -66,7 +70,7 @@ contract Gibscards is ReentrancyGuard{
         commitments[_commitment].denomination = _denomination;
         commitments[_commitment].token = IERC20(token);
         commitments[_commitment].isUsed = true;
-        IERC20(token).transferFrom(msg.sender, address(this), _denomination);
+        IERC20(token).safeTransferFrom(msg.sender, address(this), _denomination);
 
         emit Deposit(
             _commitment,
@@ -77,16 +81,40 @@ contract Gibscards is ReentrancyGuard{
         );
     }
 
-    // function withdraw(
-    //     bytes calldata _proof,
-    //     bytes32 _nullifierHash,
-    //     bytes32 _commitment,
-    //     address payable _recipient
-    // ) external nonReentrant {
-    //     require(
-    //         !nullifierHashes[_nullifierHash],
-    //         "The note has been already spent"
-    //     );
-    //     require(commitments[_commitment].isUsed, "Invalid note");
-    // }
+    function withdraw(
+        uint256[8] calldata _proof,
+        bytes32 _nullifierHash,
+        bytes32 _commitment,
+        address _recipient
+    ) external nonReentrant {
+        require(
+            !nullifierHashes[_nullifierHash],
+            "The note has been already spent"
+        );
+        require(commitments[_commitment].isUsed, "Invalid note");
+        require(
+            verifyProof(
+                [_proof[0], _proof[1]],
+                [[_proof[2], _proof[3]], [_proof[4], _proof[5]]],
+                [_proof[6], _proof[7]],
+                [
+                    uint256(_nullifierHash),
+                    uint256(_commitment),
+                    uint256(uint160(_recipient))
+                ]
+            ),
+            "Invalid Withdraw proof"
+        );
+
+        nullifierHashes[_nullifierHash] = true;
+        commitments[_commitment].recipient = _recipient;
+        commitments[_commitment].sentAt = block.timestamp;
+
+        commitments[_commitment].token.safeTransfer(
+            _recipient,
+            commitments[_commitment].denomination
+        );
+
+        emit Withdrawal(_recipient, _nullifierHash);
+    }
 }

@@ -1,6 +1,9 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { generateDeposit, generateComitment } = require("./utils/utils");
+const {
+  generateDeposit,
+  exportCallDataGroth16,
+} = require("../lib/utils");
 
 const parseEther = (v) => ethers.parseEther(v);
 
@@ -8,7 +11,7 @@ describe("Test", function () {
   let verifier, gibscards, gibscardsAddress, alice, bob, token, tokenAddress;
 
   before(async function () {
-    const VerifierFactory = await ethers.getContractFactory("GibscardsVerifier");
+    const VerifierFactory = await ethers.getContractFactory("Groth16Verifier");
     verifier = await VerifierFactory.deploy();
     await verifier.waitForDeployment();
 
@@ -24,14 +27,13 @@ describe("Test", function () {
     token = await MockERC20Factory.deploy();
     await token.waitForDeployment();
     tokenAddress = token.target;
-
-    await token.connect(alice).mint(alice.address, parseEther("100"));
   });
 
-  it("Should create ERC20 deposit", async function () {
+  it("Deposit", async function () {
     const deposit = await generateDeposit();
     const denomination = parseEther("100");
 
+    await token.connect(alice).mint(alice.address, parseEther("100"));
     //wrong denomination
     await expect(
       gibscards
@@ -50,5 +52,51 @@ describe("Test", function () {
 
     expect(aliceBalance).to.equal(parseEther("0"));
     expect(contractBalance).to.equal(denomination);
+  });
+
+  it("Withdraw", async function () {
+    const deposit = await generateDeposit();
+    const denomination = parseEther("100");
+    await token.connect(alice).mint(alice.address, parseEther("100"));
+    await token.connect(alice).approve(gibscardsAddress, denomination);
+    await gibscards
+      .connect(alice)
+      .deposit(deposit.commitmentHex, denomination, tokenAddress);
+
+    const input = {
+      nullifierHash: deposit.nullifierHash,
+      commitmentHash: deposit.commitment,
+      recipient: bob.address,
+      nullifier: deposit.nullifier,
+      secret: deposit.secret,
+    };
+    const wasm = "./zkproof/gibscards.wasm";
+    const zkey = "./zkproof/gibscards_final.zkey";
+
+    let dataResult = await exportCallDataGroth16(input, wasm, zkey);
+
+    let result = await gibscards.verifyProof(
+      dataResult.a,
+      dataResult.b,
+      dataResult.c,
+      dataResult.Input
+    );
+
+    expect(result).to.equal(true);
+
+    const tx = await gibscards
+      .connect(bob)
+      .withdraw(
+        dataResult.proofData,
+        deposit.nullifierHex,
+        deposit.commitmentHex,
+        bob.address
+      );
+    
+    const bobBalance = await token.balanceOf(bob.address);
+    const contractBalance = await token.balanceOf(gibscardsAddress);
+
+    expect(bobBalance).to.equal(denomination);
+    // expect(contractBalance).to.equal(parseEther("0"));
   });
 });

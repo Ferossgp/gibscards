@@ -1,7 +1,5 @@
 const { groth16 } = require("snarkjs");
-const snarkjs = require("snarkjs");
 const crypto = require("crypto");
-// const circomlib = require("circomlib");
 const circomlib = require("circomlibjs");
 
 const leInt2Buff = require("ffjavascript").utils.leInt2Buff;
@@ -19,14 +17,24 @@ function toHex(number, length = 32) {
   return "0x" + str.padStart(length * 2, "0");
 }
 
-const toFixedHex = (number, length = 32) =>
-  "0x" +
-  bigInt(number)
-    .toString(16)
-    .padStart(length * 2, "0");
-
 function generateComitment() {
-  return toFixedHex(43);
+  return toHex(43);
+}
+
+async function generateWithdrawProof(deposit, recipient) {
+  const input = {
+    nullifierHash: deposit.nullifierHash,
+    commitmentHash: deposit.commitment,
+    recipient,
+    nullifier: deposit.nullifier,
+    secret: deposit.secret,
+  };
+  const wasm = "./zkproof/gibscards.wasm";
+  const zkey = "./zkproof/gibscards_final.zkey";
+
+  let dataResult = await exportCallDataGroth16(input, wasm, zkey);
+
+  return dataResult;
 }
 
 async function createDeposit({ nullifier, secret }) {
@@ -57,14 +65,14 @@ async function createDeposit({ nullifier, secret }) {
 function generateDeposit() {
   const secret = rbigint(31);
   const nullifier = rbigint(31);
-
   return createDeposit({ nullifier, secret });
 }
 
 async function exportCallDataGroth16(input, wasmPath, zkeyPath) {
-  const { proof: _proof, publicSignals: _publicSignals } =
+  const { proof: proof, publicSignals: _publicSignals } =
     await groth16.fullProve(input, wasmPath, zkeyPath);
-  const calldata = await groth16.exportSolidityCallData(_proof, _publicSignals);
+
+  const calldata = await groth16.exportSolidityCallData(proof, _publicSignals);
 
   const argv = calldata
     .replace(/["[\]\s]/g, "")
@@ -83,7 +91,18 @@ async function exportCallDataGroth16(input, wasmPath, zkeyPath) {
     Input.push(argv[i]);
   }
 
-  return { a, b, c, Input };
+  const proofData = [
+    argv[0],
+    argv[1],
+    argv[2],
+    argv[3],
+    argv[4],
+    argv[5],
+    argv[6],
+    argv[7],
+  ];
+
+  return { a, b, c, Input, proofData };
 }
 
 module.exports = {
@@ -91,4 +110,5 @@ module.exports = {
   createDeposit,
   generateComitment,
   generateDeposit,
+  generateWithdrawProof,
 };

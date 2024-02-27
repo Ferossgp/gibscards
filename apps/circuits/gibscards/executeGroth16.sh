@@ -45,19 +45,14 @@ snarkjs zkey export verificationkey ${CIRCUIT}_final.zkey ${OUTPUT}/verification
 
 # echo "----- Generate zk-proof -----"
 # Generate a zk-proof associated to the circuit and the witness. This generates proof.json and public.json
-# snarkjs groth16 prove ${CIRCUIT}_final.zkey ${CIRCUIT}_js/witness.wtns proof.json public.json
+# snarkjs groth16 prove ${CIRCUIT}_final.zkey ${OUTPUT}/${CIRCUIT}_js/witness.wtns ${OUTPUT}/proof.json ${OUTPUT}/public.json
 
 # echo "----- Verify the proof -----"
 # Verify the proof
-# snarkjs groth16 verify verification_key.json public.json proof.json
+# snarkjs groth16 verify ${OUTPUT}/verification_key.json ${OUTPUT}/public.json ${OUTPUT}/proof.json
 
 # Generate a Solidity verifier that allows verifying proofs on Ethereum blockchain
 snarkjs zkey export solidityverifier ${CIRCUIT}_final.zkey ${CIRCUIT}Verifier.sol
-# Update the solidity version in the Solidity verifier
-# sed -i 's/0.6.11;/0.8.4;/g' ${CIRCUIT}Verifier.sol
-# Update the contract name in the Solidity verifier
-# sed -i "s/contract Verifier/contract ${CIRCUIT^}Verifier/g" ${CIRCUIT}Verifier.sol
-
 
 # echo "----- Generate and print parameters of call -----"
 # Generate and print parameters of call
