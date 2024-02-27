@@ -8,7 +8,7 @@
     "deploy": "wrangler pages deploy ./build/client",
     "dev": "remix vite:dev",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
-    "start": "wrangler pages dev ./build/client",
+    "start": "wrangler pages dev ./build/client --node-compat",
     "typecheck": "tsc",
     "types": "wrangler types"
   },
@@ -41,6 +41,7 @@
     "tailwindcss-animate": "^1.0.7",
     "usehooks-ts": "^2.15.1",
     "viem": "^2.7.9",
+    "vite-plugin-node-polyfills": "^0.21.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {
@@ -63,7 +64,7 @@
     "typescript": "^5.1.6",
     "vite": "^5.0.0",
     "vite-tsconfig-paths": "^4.3.0",
-    "wrangler": "^3.24.0"
+    "wrangler": "^3.29.0"
   },
   "engines": {
     "node": ">=19.0.0"
