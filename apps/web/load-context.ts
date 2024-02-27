@@ -8,7 +8,9 @@ import { type PlatformProxy } from "wrangler";
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface Env {
   MY_KV: KVNamespace;
-  ALCHEMY_API_KEY: string;
+  ZERO_EX_API_KEY: string;
+  THIRD_CLIENT: string
+  QUICKNODE_NFT_API: string
 }
 
 type Cloudflare = Omit<PlatformProxy<Env>, "dispose">;

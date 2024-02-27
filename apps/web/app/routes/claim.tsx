@@ -3,7 +3,7 @@ import { json, type LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { useLoaderData } from "@remix-run/react";
 import { useContract, useNFTs, NFT, useValidDirectListings } from "@thirdweb-dev/react";
 import { Loader2 } from "lucide-react";
-import { encodeAbiParameters, encodeFunctionData, getAddress } from "viem";
+import { encodeFunctionData, getAddress, parseUnits } from "viem";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -15,72 +15,47 @@ import { getNFTsByCollection } from "~/lib/quicknode";
 import { Networks } from "~/lib/types";
 import { getZeroExSwapQuote } from "~/lib/zeroEx";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
+import { SEPOLIA_MARKETPLACE_ADDRESS, SEPOLIA_NFT_CONTRACT, SEPOLIA_USDC, SEPOLIA_WETH, USDC_DECIMALS } from "~/constants";
+import { useUserOperation } from "~/hooks/use-user-op";
+import { MARKETPLACE_ABI } from "~/abis";
 
 const key = "__my-key__";
-const SEPOLIA_CONTRACT = "0xE3CCCAcB377D12Edf4000c9DFcDce900B977C50c";
-const SEPOLIA_MARKETPLACE_ADDRESS = '0xc9a422BfCA8fA421CF91f70BEa5a33B69E782314'
+
 const FAILED_NAME = "Failed to load NFT metadata";
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const id = url.searchParams.get("id");
-
-  if (id === null) {
-    return json({ value: "No id provided" });
-  }
-
   const { MY_KV, ZERO_EX_API_KEY } =
     context.cloudflare.env;
 
-  const value = await MY_KV.get(key);
-
   const quote = await getZeroExSwapQuote({
-    sellAmount: "1000000",
-    sellToken: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
-    buyTokenAddress: "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14",
+    sellAmount: parseUnits("100", USDC_DECIMALS).toString(),
+    sellToken: SEPOLIA_USDC,
+    buyTokenAddress: SEPOLIA_WETH,
     slippagePercentage: "0.05",
     networkId: Networks.SEPOLIA,
     apiKey: ZERO_EX_API_KEY,
   })
 
+  const swapContext = {
+    sellTokenAddress: quote.sellTokenAddress,
+    buyTokenAddress: quote.buyTokenAddress,
+    allowanceTarget: quote.allowanceTarget,
+    to: quote.to,
+    data: quote.data,
+  }
+
+  if (id === null) {
+    return json({ value: "No id provided", swapContext });
+  }
+
+  const value = await MY_KV.get(key);
+
   // const nfts = await getNFTsByCollection({ QUICKNODE_NFT_API, contract: SEPOLIA_CONTRACT })
 
-  return json({ value, quote });
+  return json({ value, swapContext });
 }
-
-const abi = [{
-  inputs: [
-    {
-      internalType: "uint256",
-      name: "_listingId",
-      type: "uint256",
-    },
-    {
-      internalType: "address",
-      name: "_buyFor",
-      type: "address",
-    },
-    {
-      internalType: "uint256",
-      name: "_quantity",
-      type: "uint256",
-    },
-    {
-      internalType: "address",
-      name: "_currency",
-      type: "address",
-    },
-    {
-      internalType: "uint256",
-      name: "_expectedTotalPrice",
-      type: "uint256",
-    },
-  ],
-  name: "buyFromListing",
-  outputs: [],
-  stateMutability: "payable",
-  type: "function",
-}] as const
 
 const NftView: React.FC<{ nft: NFT }> = ({ nft }) => {
   const { contract: marketplace } = useContract(
@@ -92,11 +67,11 @@ const NftView: React.FC<{ nft: NFT }> = ({ nft }) => {
 
   const { data: directListing, isLoading: loadingDirect } =
     useValidDirectListings(marketplace, {
-      tokenContract: SEPOLIA_CONTRACT,
+      tokenContract: SEPOLIA_NFT_CONTRACT,
       tokenId: nft.metadata.id,
     });
 
-
+  const sendUserOperation = useUserOperation();
 
   if (directListing == null && !loadingDirect) {
     return null
@@ -108,7 +83,7 @@ const NftView: React.FC<{ nft: NFT }> = ({ nft }) => {
     const address = primaryWallet?.address;
     if (listing && address) {
       txResult = encodeFunctionData({
-        abi: abi,
+        abi: MARKETPLACE_ABI,
         functionName: "buyFromListing",
         args: [
           BigInt(listing.id),
@@ -122,11 +97,18 @@ const NftView: React.FC<{ nft: NFT }> = ({ nft }) => {
       throw new Error("No valid listing found for this NFT");
     }
 
-    console.log(txResult);
+    const data = await sendUserOperation([
+      {
+        data: txResult,
+        value: BigInt(0),
+        target: SEPOLIA_MARKETPLACE_ADDRESS,
+      },
+    ]);
+
+    console.log(data);
 
     return txResult;
   }
-
 
   return (
     <Card>
@@ -150,7 +132,7 @@ const NftView: React.FC<{ nft: NFT }> = ({ nft }) => {
 
 export default function Index() {
   const loaderData = useLoaderData<typeof loader>();
-  const { contract } = useContract(SEPOLIA_CONTRACT);
+  const { contract } = useContract(SEPOLIA_NFT_CONTRACT);
   const { data, isLoading } = useNFTs(contract, { count: 10 });
 
   return (
@@ -163,9 +145,10 @@ export default function Index() {
             className="w-1/3"
           />
         </div>
-        <div className="flex flex-col gap-4 relative z-10">
-          <h1 className="text-center text-3xl font-bold">
-            Bro you are the best 💛
+        <div className="flex flex-col gap-8 relative z-10">
+          <pre>{JSON.stringify(loaderData, null, 2)}</pre>
+          <h1 className="text-center text-xl">
+            {loaderData.value}
           </h1>
           {isLoading ? (
             <div>Loading...</div>

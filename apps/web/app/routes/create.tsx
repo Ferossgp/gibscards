@@ -9,6 +9,9 @@ import {
 import { useActionData, useSubmit } from "@remix-run/react";
 import { useUserOperation } from "~/hooks/use-user-op";
 import { nanoid } from "nanoid";
+import { SEPOLIA_GIBSCARD_CONTRACT } from "~/constants";
+import { encodeFunctionData } from "viem";
+import { GIBSCARD_ABI } from "~/abis";
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const { MY_KV } = context.cloudflare.env
@@ -17,8 +20,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
   if (request.method === "POST") {
     const formData = await request.formData();
-    const value = formData.get("message") as string;
-    await MY_KV.put(uniqueId, value);
+    const message = formData.get("message") as string;
+    const value = formData.get("value") as string;
+
+    await MY_KV.put(uniqueId, JSON.stringify({ message, value }));
 
     return json(
       { success: true, cardId: uniqueId },
@@ -44,11 +49,13 @@ export default function Index() {
 
   const onSubmit = async () => {
     const data = await sendUserOperation([{
-      data: '0x0',
-      target: '0x0',
+      data: encodeFunctionData({
+        abi: GIBSCARD_ABI,
+        functionName: "deposit",
+        args: []
+      }),
+      target: SEPOLIA_GIBSCARD_CONTRACT,
     }]);
-
-    console.log(data);
 
     const formData = new FormData();
     formData.append("message", message);
