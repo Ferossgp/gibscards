@@ -16,7 +16,7 @@ import { MARKETPLACE_ABI } from "~/marketplace-abi";
 
 const FAILED_NAME = "Failed to load NFT metadata";
 
-const NftView: React.FC<{ nft: NFT }> = ({ nft }) => {
+const NftView: React.FC<{ nft: NFT, swapData?: string }> = ({ nft, swapData }) => {
   const { contract: marketplace } = useContract(
     SEPOLIA_MARKETPLACE_ADDRESS,
     "marketplace-v3"
@@ -40,6 +40,7 @@ const NftView: React.FC<{ nft: NFT }> = ({ nft }) => {
     let txResult;
     const listing = directListing?.[0];
     const address = primaryWallet?.address;
+    console.log({ swapData });
     if (listing && address) {
       txResult = encodeFunctionData({
         abi: MARKETPLACE_ABI,
@@ -65,7 +66,6 @@ const NftView: React.FC<{ nft: NFT }> = ({ nft }) => {
     ]);
 
     console.log(data);
-
     return txResult;
   }
 
@@ -89,38 +89,41 @@ const NftView: React.FC<{ nft: NFT }> = ({ nft }) => {
   );
 };
 
-export default function NftGrid({ loaderData }: { loaderData: any }) {
+export default function NftGrid({ status, message, swapContext }: {
+  status: "success" | "error"
+  message?: string
+  swapContext?: {
+    data: string
+  }
+}) {
   const { contract } = useContract(SEPOLIA_NFT_CONTRACT);
   const { data, isLoading } = useNFTs(contract, { count: 10 });
 
+  if (status === "error") {
+    return (
+      <h1 className="text-center text-xl">
+        {message}
+      </h1>
+    )
+  }
+
   return (
-    <div className="mx-auto grid w-full max-w-6xl min-h-screen pb-8 z-0">
-      <div className="p-4 relative overflow-hidden rounded-3xl border-2 border-neutral-900 bg-[#f3f2fa] w-full h-full">
-        <div className="absolute bottom-0 right-0 left-0 w-full z-0 opacity-30 transition-all duration-1000 ease-in-out flex justify-center items-center">
-          <img
-            src="/assets/friends.svg"
-            alt="Buy gift card"
-            className="w-1/3"
-          />
+    <div className="flex flex-col gap-8 relative z-10">
+      <pre>{JSON.stringify(swapContext, null, 2)}</pre>
+      <h1 className="text-center text-xl">
+        {message}
+      </h1>
+      {isLoading ? (
+        <div>Loading...</div>
+      ) : (
+        <div className="grid grid-cols-4 gap-6">
+          {data?.filter((e) => {
+            return e.metadata.name !== FAILED_NAME;
+          }).map((nft: NFT) => {
+            return <NftView key={nft.metadata.id} nft={nft} swapData={swapContext?.data} />;
+          })}
         </div>
-        <div className="flex flex-col gap-8 relative z-10">
-          <pre>{JSON.stringify(loaderData, null, 2)}</pre>
-          <h1 className="text-center text-xl">
-            {loaderData.value}
-          </h1>
-          {isLoading ? (
-            <div>Loading...</div>
-          ) : (
-            <div className="grid grid-cols-4 gap-6">
-              {data?.filter((e) => {
-                return e.metadata.name !== FAILED_NAME;
-              }).map((nft: NFT) => {
-                return <NftView key={nft.metadata.id} nft={nft} />;
-              })}
-            </div>
-          )}
-        </div>
-      </div>
+      )}
     </div>
-  );
+  )
 }
