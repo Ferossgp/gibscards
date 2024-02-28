@@ -12,7 +12,7 @@ import {
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { SEPOLIA_MARKETPLACE_ADDRESS, SEPOLIA_NFT_CONTRACT } from "~/constants";
 import { useUserOperation } from "~/hooks/use-user-op.client";
-import { MARKETPLACE_ABI } from "~/abis";
+import { MARKETPLACE_ABI } from "~/marketplace-abi";
 
 const FAILED_NAME = "Failed to load NFT metadata";
 

@@ -35,7 +35,7 @@ export default function Index() {
             </div>
             <div>
               <Link to="/claim">
-                <Button variant="secondary">Use you Gibscard</Button>
+                <Button variant="secondary">Use your Gibscard</Button>
               </Link>
             </div>
           </div>
