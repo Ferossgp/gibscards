@@ -2,52 +2,48 @@ import { useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { useActionData, useSubmit } from "@remix-run/react";
-import {
-  SEPOLIA_GIBSCARD_CONTRACT,
-  SEPOLIA_USDC,
-  USDC_DECIMALS,
-} from "~/constants";
+import { GIBSCARD_CONTRACTS, USDC_CONTRACTS, USDC_DECIMALS } from "~/constants";
 import {
   Client,
   CustomTransport,
-  createPublicClient,
+  JsonRpcAccount,
   createWalletClient,
   custom,
   encodeFunctionData,
   getAddress,
-  http,
   parseUnits,
 } from "viem";
 import { gibscardsAbi, ierc20Abi } from "~/abis";
-import { generateDeposit } from "~/lib/zk";
+import { generateDeposit, generateWithdrawProof } from "~/lib/zk";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { sepolia } from "viem/chains";
 import { match } from "ts-pattern";
+import { useActiveChain } from "~/context/Web3Provider.client";
+import QRCode from "react-qr-code";
 
-const publicClient = createPublicClient({
-  chain: sepolia,
-  transport: http("https://rpc.sepolia.org"),
-});
+type EthereumProvider = { request(...args: any): Promise<any> };
 
 const VALUES = [1, 5, 10, 15];
 export default function CreateView() {
   const [message, setMessage] = useState<string>("");
   const [selected, setSelected] = useState<number | null>(null);
   const submit = useSubmit();
-  const data = useActionData();
+  const data = useActionData<{ cardId: string; url: string }>();
   const { primaryWallet } = useDynamicContext();
   const [client, setClient] = useState<Client<
     CustomTransport,
     typeof sepolia,
-    { address: `0x${string}`; type: "json-rpc" }
+    JsonRpcAccount<`0x${string}`>
   > | null>(null);
   const [step, setStep] = useState("idle");
+
+  const { publicClient, chain } = useActiveChain();
+
   useEffect(() => {
     const init = async () => {
       if (primaryWallet == null) return;
 
       const { address, connector } = primaryWallet;
-
       if (connector == null || address == null) return;
       const signer = await connector.getSigner();
 
@@ -55,7 +51,7 @@ export default function CreateView() {
         createWalletClient({
           chain: sepolia,
           account: getAddress(address),
-          transport: custom(signer),
+          transport: custom(signer as EthereumProvider),
         })
       );
     };
@@ -63,10 +59,9 @@ export default function CreateView() {
   }, [primaryWallet]);
 
   const onSubmit = async () => {
-    if (!selected || !client) return;
+    if (!selected || !client || !publicClient) return;
     setStep("loading");
     const deposit = await generateDeposit();
-
     // const proof = await generateWithdrawProof({
     //   nullifierHex: deposit.nullifierHex,
     //   commitmentHex: deposit.commitmentHex,
@@ -80,11 +75,11 @@ export default function CreateView() {
         abi: ierc20Abi,
         functionName: "approve",
         args: [
-          SEPOLIA_GIBSCARD_CONTRACT,
+          GIBSCARD_CONTRACTS[chain],
           parseUnits(selected.toString(), USDC_DECIMALS),
         ],
       }),
-      to: SEPOLIA_USDC,
+      to: USDC_CONTRACTS[chain],
     });
 
     await publicClient.waitForTransactionReceipt({ hash: approve });
@@ -98,24 +93,38 @@ export default function CreateView() {
         args: [
           deposit.commitmentHex as `0x${string}`,
           parseUnits(selected.toString(), USDC_DECIMALS),
-          SEPOLIA_USDC,
+          USDC_CONTRACTS[chain],
         ],
       }),
-      to: SEPOLIA_GIBSCARD_CONTRACT,
+      to: GIBSCARD_CONTRACTS[chain],
     });
 
     const formData = new FormData();
     formData.append("message", message);
     formData.append("hash", data || "");
     formData.append("value", selected?.toString() || "");
-    formData.append("deposit", JSON.stringify(deposit));
+    formData.append("secret", deposit.secret.toString());
+    formData.append("nullifier", deposit.nullifier.toString());
+    formData.append("nullifierHex", deposit.nullifierHex);
+    formData.append("commitmentHex", deposit.commitmentHex);
 
-    return;
     submit(formData, { method: "post" });
   };
 
   if (data) {
-    return <div>Success {data.cardId}</div>;
+    return (
+      <div className="flex flex-col items-center justify-center gap-10 z-10 relative">
+        <h1 className="text-center text-3xl font-bold">
+          Success! Your order id: #{data.cardId}
+        </h1>
+        <div className="p-4 bg-white rounded-xl">
+          <a className="text-base" href={data.url}>{data.url}</a>
+        </div>
+        <div className="bg-white rounded-xl border-2 border-[#border-neutral-900] p-4">
+          <QRCode value={data.url} />
+        </div>
+      </div>
+    );
   }
 
   return (

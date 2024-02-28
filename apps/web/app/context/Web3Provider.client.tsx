@@ -3,17 +3,31 @@ import {
   DynamicContextProvider,
 } from "@dynamic-labs/sdk-react-core";
 import { ThirdwebProvider } from "@thirdweb-dev/react";
-import { Sepolia } from "@thirdweb-dev/chains";
+import { BaseSepoliaTestnet, Sepolia } from "@thirdweb-dev/chains";
 import { EthereumWalletConnectors } from "@dynamic-labs/ethereum";
 import { ZeroDevSmartWalletConnectors } from "@dynamic-labs/ethereum-aa";
+import { createContext, useContext, useMemo, useState } from "react";
+import { SupportedChains } from "~/constants";
+import { createPublicClient, http } from "viem";
+import * as ViemChains from "viem/chains";
 
-export function Web3Provider({
-  children,
-  clientId
-}: {
-  children: React.ReactNode;
-  clientId: string;
-}) {
+const ChainContext = createContext<{
+  chain: SupportedChains,
+  setChain: (_: SupportedChains) => void
+  publicClient: ReturnType<typeof createPublicClient> | null
+}>({
+  chain: "sepolia",
+  setChain: () => { throw new Error("Not implemented") },
+  publicClient: null
+});
+
+const THIRD_WEB_CHAINS = {
+  "sepolia": Sepolia,
+  "base": BaseSepoliaTestnet
+} as const
+
+const Providers = ({ children, clientId }: { clientId: string, children: React.ReactNode }) => {
+  const { chain } = useActiveChain()
   return (
     <DynamicContextProvider
       settings={{
@@ -22,12 +36,54 @@ export function Web3Provider({
       }}
     >
       <ThirdwebProvider
-        activeChain={Sepolia}
+        activeChain={THIRD_WEB_CHAINS[chain]}
         clientId={clientId}
       >
         {children}
       </ThirdwebProvider>
     </DynamicContextProvider>
+  )
+}
+
+const VIEM_CHAINS = {
+  "sepolia": ViemChains.sepolia,
+  "base": ViemChains.baseSepolia,
+} as const
+
+const RPC_URLS = {
+  "sepolia": "https://rpc.sepolia.org",
+  "base": "https://sepolia.base.org"
+} as const
+
+export function Web3Provider({
+  children,
+  clientId
+}: {
+  children: React.ReactNode;
+  clientId: string;
+}) {
+  const [chain, setChain] = useState<SupportedChains>('sepolia');
+
+  const publicClient = useMemo(() => {
+    return createPublicClient({
+      chain: VIEM_CHAINS[chain],
+      transport: http(RPC_URLS[chain]),
+    });
+  }, [chain]);
+
+  return (
+    <ChainContext.Provider value={{
+      chain,
+      setChain,
+      publicClient
+    }}>
+      <Providers clientId={clientId}>
+        {children}
+      </Providers>
+    </ChainContext.Provider >
   );
 }
 
+export function useActiveChain() {
+  return useContext(ChainContext);
+}

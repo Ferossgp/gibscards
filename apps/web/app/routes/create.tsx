@@ -1,31 +1,53 @@
 import { createToastHeaders } from "~/utils/toast.server";
-import {
-  json,
-  type ActionFunctionArgs,
-} from "@remix-run/cloudflare";
+import { json, type ActionFunctionArgs } from "@remix-run/cloudflare";
 import { nanoid } from "nanoid";
 import { ClientOnly } from "remix-utils/client-only";
 import CreateView from "~/components/create.client";
+import { GiftCardStored } from "~/types";
+import { generateQueryPath } from "~/lib/zeroEx";
 
 export async function action({ request, context }: ActionFunctionArgs) {
-  const { MY_KV } = context.cloudflare.env
+  const { MY_KV } = context.cloudflare.env;
 
-  const uniqueId = nanoid();
+  const uniqueId = nanoid(10);
+  const host = request.headers.get("host");
 
   if (request.method === "POST") {
     const formData = await request.formData();
     const message = formData.get("message") as string;
     const value = formData.get("value") as string;
+    const hash = formData.get("hash") as string;
+    const nullifier = formData.get("nullifier") as string;
+    const nullifierHex = formData.get("nullifierHex") as string;
+    const commitmentHex = formData.get("commitmentHex") as string;
+    const secret = formData.get("secret") as string;
 
-    await MY_KV.put(uniqueId, JSON.stringify({ message, value }));
+    const giftcard: GiftCardStored = {
+      message,
+      value,
+      nullifier: nullifier,
+      hash: hash,
+      nullifierHex: nullifierHex,
+      commitmentHex: commitmentHex,
+    };
+
+    const url = generateQueryPath(`http://${host}/claim`, {
+      id: uniqueId,
+      s: secret,
+    });
+
+    await MY_KV.put(uniqueId, JSON.stringify(giftcard));
 
     return json(
-      { success: true, cardId: uniqueId },
+      { success: true, cardId: uniqueId, url: url },
       {
-        headers: await createToastHeaders({
-          description: "Your gift card has been issued successfully! 🎉",
-          type: "success",
-        }, context.cloudflare.env),
+        headers: await createToastHeaders(
+          {
+            description: "Your gift card has been issued successfully! 🎉",
+            type: "success",
+          },
+          context.cloudflare.env
+        ),
       }
     );
   }
@@ -34,7 +56,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function Index() {
-
   return (
     <div className="mx-auto grid w-full max-w-6xl min-h-[90vh] pb-8">
       <div className="p-4 relative overflow-hidden rounded-3xl border-2 border-neutral-900 bg-[#f3f2fa] w-full h-full">
@@ -45,10 +66,8 @@ export default function Index() {
             className="w-1/3"
           />
         </div>
-        <ClientOnly>
-          {() => (<CreateView />)}
-        </ClientOnly>
+        <ClientOnly>{() => <CreateView />}</ClientOnly>
       </div>
     </div>
-  )
+  );
 }
