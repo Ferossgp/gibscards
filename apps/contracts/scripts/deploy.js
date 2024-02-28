@@ -1,4 +1,3 @@
-
 const main = async () => {
   // const GibscardsVerifier = await hre.ethers.getContractFactory("Groth16Verifier");
   // const gibscardsVerifier = await GibscardsVerifier.deploy();
@@ -7,9 +6,10 @@ const main = async () => {
   // const verifierAddr = gibscardsVerifier.target;
 
   const verifierAddr = "0x14558c58b92e8f6bb47135ceeec293084d8358c3";
+  const zeroxproxy = "0xdef1c0ded9bec7f1a1670819833240f027b25eff";
 
   const Gibscards = await hre.ethers.getContractFactory("Gibscards");
-  const gibscards = await Gibscards.deploy(verifierAddr);
+  const gibscards = await Gibscards.deploy(verifierAddr, zeroxproxy);
   await gibscards.waitForDeployment();
   console.log("Gibscards Contract deployed to:", gibscards.target);
 };

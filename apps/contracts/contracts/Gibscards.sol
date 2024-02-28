@@ -28,6 +28,10 @@ contract Gibscards is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     address public verifierAddr;
+    address payable public _owner;
+    // 0x ExchangeProxy address.
+    // See https://docs.0x.org/developer-resources/contract-addresses
+    address public exchangeProxy;
 
     mapping(bytes32 => bool) public nullifierHashes;
     mapping(bytes32 => Commitment) public commitments;
@@ -41,8 +45,15 @@ contract Gibscards is ReentrancyGuard {
     );
     event Withdrawal(address to, bytes32 nullifierHash);
 
-    constructor(address _verifierAddr) {
+    constructor(address _verifierAddr, address _exchangeProxy) {
         verifierAddr = _verifierAddr;
+        _owner = payable(msg.sender);
+        exchangeProxy = _exchangeProxy;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == _owner, "ONLY_OWNER");
+        _;
     }
 
     function verifyProof(
@@ -70,7 +81,11 @@ contract Gibscards is ReentrancyGuard {
         commitments[_commitment].denomination = _denomination;
         commitments[_commitment].token = IERC20(token);
         commitments[_commitment].isUsed = true;
-        IERC20(token).safeTransferFrom(msg.sender, address(this), _denomination);
+        IERC20(token).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _denomination
+        );
 
         emit Deposit(
             _commitment,
@@ -85,7 +100,9 @@ contract Gibscards is ReentrancyGuard {
         uint256[8] calldata _proof,
         bytes32 _nullifierHash,
         bytes32 _commitment,
-        address _recipient
+        address _recipient,
+        bytes calldata swapCallData,
+        address _buyToken
     ) external nonReentrant {
         require(
             !nullifierHashes[_nullifierHash],
@@ -110,11 +127,37 @@ contract Gibscards is ReentrancyGuard {
         commitments[_commitment].recipient = _recipient;
         commitments[_commitment].sentAt = block.timestamp;
 
-        commitments[_commitment].token.safeTransfer(
-            _recipient,
-            commitments[_commitment].denomination
+        fillQuote(
+            commitments[_commitment].token,
+            IERC20(_buyToken),
+            exchangeProxy,
+            payable(exchangeProxy),
+            swapCallData
         );
 
+        // commitments[_commitment].token.safeTransfer(
+        //     _recipient,
+        //     commitments[_commitment].denomination
+        // );
+
         emit Withdrawal(_recipient, _nullifierHash);
+    }
+
+    function fillQuote(
+        IERC20 sellToken,
+        IERC20 buyToken,
+        address spender,
+        address payable swapTarget,
+        bytes calldata swapCallData
+    ) internal {
+        require(swapTarget == exchangeProxy, "Target not ExchangeProxy");
+        uint256 boughtAmount = buyToken.balanceOf(address(this));
+
+        require(sellToken.approve(spender, type(uint256).max));
+        (bool success, ) = swapTarget.call{value: msg.value}(swapCallData);
+        require(success, "SWAP_CALL_FAILED");
+        payable(msg.sender).transfer(address(this).balance);
+
+        boughtAmount = buyToken.balanceOf(address(this)) - boughtAmount;
     }
 }
