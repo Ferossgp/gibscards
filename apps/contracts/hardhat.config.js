@@ -28,5 +28,9 @@ module.exports = {
       url: "https://rpc.sepolia.org/",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : undefined,
     },
+    polygon_testnet: {
+      url: "https://rpc.ankr.com/polygon_mumbai/",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : undefined,
+    },
   },
 };

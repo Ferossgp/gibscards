@@ -32,6 +32,7 @@ contract Gibscards is ReentrancyGuard {
     // 0x ExchangeProxy address.
     // See https://docs.0x.org/developer-resources/contract-addresses
     address public exchangeProxy;
+    address public marketplaceAddr;
 
     mapping(bytes32 => bool) public nullifierHashes;
     mapping(bytes32 => Commitment) public commitments;
@@ -45,10 +46,15 @@ contract Gibscards is ReentrancyGuard {
     );
     event Withdrawal(address to, bytes32 nullifierHash);
 
-    constructor(address _verifierAddr, address _exchangeProxy) {
+    constructor(
+        address _verifierAddr,
+        address _exchangeProxy,
+        address _marketplaceAddr
+    ) {
         verifierAddr = _verifierAddr;
         _owner = payable(msg.sender);
         exchangeProxy = _exchangeProxy;
+        marketplaceAddr = _marketplaceAddr;
     }
 
     modifier onlyOwner() {
@@ -102,7 +108,9 @@ contract Gibscards is ReentrancyGuard {
         bytes32 _commitment,
         address _recipient,
         bytes calldata swapCallData,
-        address _buyToken
+        address _buyToken,
+        bytes calldata nftSwapCallData,
+        bool _isSWAP
     ) external nonReentrant {
         require(
             !nullifierHashes[_nullifierHash],
@@ -127,13 +135,17 @@ contract Gibscards is ReentrancyGuard {
         commitments[_commitment].recipient = _recipient;
         commitments[_commitment].sentAt = block.timestamp;
 
-        fillQuote(
-            commitments[_commitment].token,
-            IERC20(_buyToken),
-            exchangeProxy,
-            payable(exchangeProxy),
-            swapCallData
-        );
+        if (_isSWAP) {
+            fillQuote(
+                commitments[_commitment].token,
+                IERC20(_buyToken),
+                exchangeProxy,
+                payable(exchangeProxy),
+                swapCallData
+            );
+        }
+
+        swapNFT(nftSwapCallData, IERC20(_buyToken));
 
         // commitments[_commitment].token.safeTransfer(
         //     _recipient,
@@ -159,5 +171,25 @@ contract Gibscards is ReentrancyGuard {
         payable(msg.sender).transfer(address(this).balance);
 
         boughtAmount = buyToken.balanceOf(address(this)) - boughtAmount;
+    }
+
+    function swapNFT(
+        bytes calldata nftSwapCallData,
+        IERC20 _buyToken
+    ) internal {
+        require(_buyToken.approve(marketplaceAddr, type(uint256).max));
+
+        (bool success, ) = marketplaceAddr.call(nftSwapCallData);
+        require(success, "NFT_CALL_FAILED");
+    }
+
+    function swapNFT2(
+        bytes calldata nftSwapCallData,
+        IERC20 _buyToken
+    ) external {
+        require(_buyToken.approve(marketplaceAddr, type(uint256).max));
+
+        (bool success, ) = marketplaceAddr.call(nftSwapCallData);
+        require(success, "NFT_CALL_FAILED");
     }
 }
