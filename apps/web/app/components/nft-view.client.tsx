@@ -23,7 +23,6 @@ import { GiftCardStored } from "~/types";
 import { generateWithdrawProof } from "~/lib/zk";
 import { useMemo, useState } from "react";
 import { gibscardsAbi } from "~/abis";
-import { toast } from "sonner";
 import { useNavigate } from "@remix-run/react";
 
 const FAILED_NAME = "Failed to load NFT metadata";
@@ -68,7 +67,6 @@ const NftView: React.FC<{
   const buyListing = async () => {
     setLoading(true);
     try {
-      return
       let buyData;
       const listing = directListing?.[0];
       const address = primaryWallet?.address;
