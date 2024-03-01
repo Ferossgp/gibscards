@@ -68,7 +68,7 @@ export function Web3Provider({
   children: React.ReactNode;
   clientId: string;
 }) {
-  const [chain, setChain] = useState<SupportedChains>('polygon');
+  const [chain, setChain] = useState<SupportedChains>('sepolia');
 
   const publicClient = useMemo(() => {
     return createPublicClient({

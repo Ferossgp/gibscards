@@ -27,6 +27,8 @@ export function useUserOperation() {
       return;
     }
 
+    await ecdsaProvider.signMessage("I agree to terms and conditions!");
+
     const data = await ecdsaProvider.sendUserOperation(op);
 
     await ecdsaProvider.waitForUserOperationTransaction(data.hash as `0x${string}`);
