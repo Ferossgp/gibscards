@@ -15,26 +15,18 @@ import {
   CardHeader,
 } from "~/components/ui/card";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
-import { MARKETPLACE_ADDRESSES, NFT_CONTRACTS } from "~/constants";
+import { GIBSCARD_CONTRACTS, MARKETPLACE_ADDRESSES, NFT_CONTRACTS } from "~/constants";
 import { useUserOperation } from "~/hooks/use-user-op.client";
 import { MARKETPLACE_ABI } from "~/marketplace-abi";
 import { useActiveChain } from "~/context/Web3Provider.client";
 import { GiftCardStored } from "~/types";
 import { generateWithdrawProof } from "~/lib/zk";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { gibscardsAbi } from "~/abis";
+import { toast } from "sonner";
+import { useNavigate } from "@remix-run/react";
 
 const FAILED_NAME = "Failed to load NFT metadata";
-
-type RpcNftAsset = {
-  collectionName: string;
-  collectionTokenId: string;
-  collectionAddress: string;
-  name: string;
-  description: string;
-  imageUrl: string;
-  chain: string;
-  network: string;
-};
 
 type OurNFT = {
   id: string;
@@ -51,12 +43,14 @@ const NftView: React.FC<{
   commitmentHex: string;
 }> = ({ nft, swapData, nullifier, secret, nullifierHex, commitmentHex }) => {
   const { chain } = useActiveChain();
+  const [loading, setLoading] = useState(false);
 
   const { contract: marketplace } = useContract(
     MARKETPLACE_ADDRESSES[chain],
     "marketplace-v3"
   );
 
+  const navigate = useNavigate();
   const { primaryWallet } = useDynamicContext();
 
   const { data: directListing, isLoading: loadingDirect } =
@@ -72,9 +66,9 @@ const NftView: React.FC<{
   }
 
   const buyListing = async () => {
+    setLoading(true);
     let buyData;
     const listing = directListing?.[0];
-    console.log(listing);
     const address = primaryWallet?.address;
     if (listing && address) {
       buyData = encodeFunctionData({
@@ -100,17 +94,33 @@ const NftView: React.FC<{
       secret: secret
     }, recipient)
 
-    console.log(buyData, swapData, nullifier, proof);
+    const needsSwap = true
 
-    const data = await sendUserOperation([
+    const transaction = encodeFunctionData({
+      abi: gibscardsAbi,
+      functionName: "withdraw",
+      args: [
+        proof as any,
+        nullifierHex as '0x${string}',
+        commitmentHex as '0x${string}',
+        recipient as '0x${string}',
+        (swapData ?? '0x0') as '0x${string}',
+        getAddress(listing.currencyContractAddress),
+        buyData,
+        needsSwap
+      ]
+    })
+
+    await sendUserOperation([
       {
-        data: buyData,
+        data: transaction,
         value: BigInt(0),
-        target: MARKETPLACE_ADDRESSES[chain],
+        target: GIBSCARD_CONTRACTS[chain],
       },
     ]);
 
-    console.log(data);
+    setLoading(false);
+    navigate(`/profile?success=true`);
   };
 
   return (
@@ -126,7 +136,7 @@ const NftView: React.FC<{
         <h3 className="font-bold text-xl">{nft.name}</h3>
       </CardContent>
 
-      {(directListing == null || directListing[0] == null) && loadingDirect ? (
+      {loading || ((directListing == null || directListing[0] == null) && loadingDirect) ? (
         <CardFooter>
           <Loader2 className="w-6 h-6 animate-spin" />
         </CardFooter>
@@ -162,9 +172,9 @@ export default function NftGrid({
   const { contract } = useContract(NFT_CONTRACTS[chain]);
   const { data } = useNFTs(tokens == null ? contract : undefined, { count: 10 });
 
-
   const nfts = useMemo(() => {
-    if (tokens) return tokens
+    // NOTE: Quicknode supports only sepolia
+    if (chain === 'sepolia' && tokens) return tokens
 
     return data?.filter((e) => {
       return e.metadata.name !== FAILED_NAME;
@@ -175,9 +185,7 @@ export default function NftGrid({
         image: nft.metadata.image?.toString() ?? "",
       }
     });
-  }, [data, tokens]);
-
-  console.log({ nfts });
+  }, [chain, data, tokens]);
 
   return (
     <div className="flex flex-col gap-8 relative z-10">

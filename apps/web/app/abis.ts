@@ -3,7 +3,7 @@ import {
   createWriteContract,
   createSimulateContract,
   createWatchContractEvent,
-} from '@wagmi/core/codegen'
+} from 'wagmi/codegen'
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Address
@@ -193,6 +193,8 @@ export const gibscardsAbi = [
     type: 'constructor',
     inputs: [
       { name: '_verifierAddr', internalType: 'address', type: 'address' },
+      { name: '_exchangeProxy', internalType: 'address', type: 'address' },
+      { name: '_marketplaceAddr', internalType: 'address', type: 'address' },
     ],
     stateMutability: 'nonpayable',
   },
@@ -266,6 +268,13 @@ export const gibscardsAbi = [
   },
   {
     type: 'function',
+    inputs: [],
+    name: '_owner',
+    outputs: [{ name: '', internalType: 'address payable', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
     name: 'commitments',
     outputs: [
@@ -292,10 +301,34 @@ export const gibscardsAbi = [
   },
   {
     type: 'function',
+    inputs: [],
+    name: 'exchangeProxy',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'marketplaceAddr',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
     name: 'nullifierHashes',
     outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
     stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'nftSwapCallData', internalType: 'bytes', type: 'bytes' },
+      { name: '_buyToken', internalType: 'contract IERC20', type: 'address' },
+    ],
+    name: 'swapNFT2',
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -323,6 +356,10 @@ export const gibscardsAbi = [
       { name: '_nullifierHash', internalType: 'bytes32', type: 'bytes32' },
       { name: '_commitment', internalType: 'bytes32', type: 'bytes32' },
       { name: '_recipient', internalType: 'address', type: 'address' },
+      { name: 'swapCallData', internalType: 'bytes', type: 'bytes' },
+      { name: '_buyToken', internalType: 'address', type: 'address' },
+      { name: 'nftSwapCallData', internalType: 'bytes', type: 'bytes' },
+      { name: '_isSWAP', internalType: 'bool', type: 'bool' },
     ],
     name: 'withdraw',
     outputs: [],
@@ -1129,11 +1166,35 @@ export const readGibscards = /*#__PURE__*/ createReadContract({
 })
 
 /**
+ * Wraps __{@link readContract}__ with `abi` set to __{@link gibscardsAbi}__ and `functionName` set to `"_owner"`
+ */
+export const readGibscardsOwner = /*#__PURE__*/ createReadContract({
+  abi: gibscardsAbi,
+  functionName: '_owner',
+})
+
+/**
  * Wraps __{@link readContract}__ with `abi` set to __{@link gibscardsAbi}__ and `functionName` set to `"commitments"`
  */
 export const readGibscardsCommitments = /*#__PURE__*/ createReadContract({
   abi: gibscardsAbi,
   functionName: 'commitments',
+})
+
+/**
+ * Wraps __{@link readContract}__ with `abi` set to __{@link gibscardsAbi}__ and `functionName` set to `"exchangeProxy"`
+ */
+export const readGibscardsExchangeProxy = /*#__PURE__*/ createReadContract({
+  abi: gibscardsAbi,
+  functionName: 'exchangeProxy',
+})
+
+/**
+ * Wraps __{@link readContract}__ with `abi` set to __{@link gibscardsAbi}__ and `functionName` set to `"marketplaceAddr"`
+ */
+export const readGibscardsMarketplaceAddr = /*#__PURE__*/ createReadContract({
+  abi: gibscardsAbi,
+  functionName: 'marketplaceAddr',
 })
 
 /**
@@ -1176,6 +1237,14 @@ export const writeGibscardsDeposit = /*#__PURE__*/ createWriteContract({
 })
 
 /**
+ * Wraps __{@link writeContract}__ with `abi` set to __{@link gibscardsAbi}__ and `functionName` set to `"swapNFT2"`
+ */
+export const writeGibscardsSwapNft2 = /*#__PURE__*/ createWriteContract({
+  abi: gibscardsAbi,
+  functionName: 'swapNFT2',
+})
+
+/**
  * Wraps __{@link writeContract}__ with `abi` set to __{@link gibscardsAbi}__ and `functionName` set to `"withdraw"`
  */
 export const writeGibscardsWithdraw = /*#__PURE__*/ createWriteContract({
@@ -1196,6 +1265,14 @@ export const simulateGibscards = /*#__PURE__*/ createSimulateContract({
 export const simulateGibscardsDeposit = /*#__PURE__*/ createSimulateContract({
   abi: gibscardsAbi,
   functionName: 'deposit',
+})
+
+/**
+ * Wraps __{@link simulateContract}__ with `abi` set to __{@link gibscardsAbi}__ and `functionName` set to `"swapNFT2"`
+ */
+export const simulateGibscardsSwapNft2 = /*#__PURE__*/ createSimulateContract({
+  abi: gibscardsAbi,
+  functionName: 'swapNFT2',
 })
 
 /**

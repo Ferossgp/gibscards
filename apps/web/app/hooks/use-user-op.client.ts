@@ -27,6 +27,10 @@ export function useUserOperation() {
       return;
     }
 
-    return ecdsaProvider.sendUserOperation(op);
+    const data = await ecdsaProvider.sendUserOperation(op);
+
+    await ecdsaProvider.waitForUserOperationTransaction(data.hash as `0x${string}`);
+
+    return data
   }, [primaryWallet])
 }

@@ -3,7 +3,7 @@ import {
   DynamicContextProvider,
 } from "@dynamic-labs/sdk-react-core";
 import { ThirdwebProvider } from "@thirdweb-dev/react";
-import { BaseSepoliaTestnet, Sepolia } from "@thirdweb-dev/chains";
+import { ArbitrumSepolia, BaseSepoliaTestnet, Mumbai, Sepolia } from "@thirdweb-dev/chains";
 import { EthereumWalletConnectors } from "@dynamic-labs/ethereum";
 import { ZeroDevSmartWalletConnectors } from "@dynamic-labs/ethereum-aa";
 import { createContext, useContext, useMemo, useState } from "react";
@@ -23,7 +23,23 @@ const ChainContext = createContext<{
 
 const THIRD_WEB_CHAINS = {
   "sepolia": Sepolia,
-  "base": BaseSepoliaTestnet
+  "base": BaseSepoliaTestnet,
+  "polygon": Mumbai,
+  "arbitrum": ArbitrumSepolia
+} as const
+
+const VIEM_CHAINS = {
+  "sepolia": ViemChains.sepolia,
+  "base": ViemChains.baseSepolia,
+  "polygon": ViemChains.polygonMumbai,
+  "arbitrum": ViemChains.arbitrumSepolia
+} as const
+
+const RPC_URLS = {
+  "sepolia": "https://rpc.sepolia.org",
+  "base": "https://sepolia.base.org",
+  "polygon": "https://rpc.ankr.com/polygon_mumbai",
+  "arbitrum": "https://sepolia-rollup.arbitrum.io/rpc	"
 } as const
 
 const Providers = ({ children, clientId }: { clientId: string, children: React.ReactNode }) => {
@@ -44,16 +60,6 @@ const Providers = ({ children, clientId }: { clientId: string, children: React.R
     </DynamicContextProvider>
   )
 }
-
-const VIEM_CHAINS = {
-  "sepolia": ViemChains.sepolia,
-  "base": ViemChains.baseSepolia,
-} as const
-
-const RPC_URLS = {
-  "sepolia": "https://rpc.sepolia.org",
-  "base": "https://sepolia.base.org"
-} as const
 
 export function Web3Provider({
   children,

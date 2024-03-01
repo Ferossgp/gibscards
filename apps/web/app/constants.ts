@@ -2,7 +2,7 @@ import { Address, getAddress, zeroAddress } from "viem";
 
 export const USDC_DECIMALS = 6
 
-const SEPOLIA_GIBSCARD_CONTRACT = getAddress('0xa36E65DdE3892940b69a4CaDE320250fD019E751')
+const SEPOLIA_GIBSCARD_CONTRACT = getAddress('0xfdfD881c3ea054456Dd9BE348EddE8a2c23Ad4bA')
 const SEPOLIA_USDC = getAddress('0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238')
 export const SEPOLIA_WETH = getAddress('0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9')
 export const SEPOLIA_UNI = getAddress('0x1f9840a85d5af5bf1d1762f925bdaddc4201f984')

@@ -33,7 +33,7 @@ export function generateComitment() {
   return toHex(43);
 }
 
-export function generateWithdrawProof(deposit: {
+export async function generateWithdrawProof(deposit: {
   nullifierHex: string;
   commitmentHex: string;
   nullifier: string;
@@ -49,7 +49,9 @@ export function generateWithdrawProof(deposit: {
   const wasm = "./zkproof/gibscards.wasm";
   const zkey = "./zkproof/gibscards_final.zkey";
 
-  return exportCallDataGroth16(input, wasm, zkey);
+  const { proofData } = await exportCallDataGroth16(input, wasm, zkey);
+
+  return proofData;
 }
 
 export async function createDeposit({
