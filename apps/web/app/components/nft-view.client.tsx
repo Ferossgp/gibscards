@@ -94,7 +94,7 @@ const NftView: React.FC<{
         secret: secret
       }, recipient)
 
-      const needsSwap = true
+      const needsSwap = chain === 'sepolia'
 
       const transaction = encodeFunctionData({
         abi: gibscardsAbi,

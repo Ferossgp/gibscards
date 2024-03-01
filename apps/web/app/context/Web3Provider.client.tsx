@@ -39,7 +39,7 @@ const RPC_URLS = {
   "sepolia": "https://rpc.sepolia.org",
   "base": "https://sepolia.base.org",
   "polygon": "https://rpc.ankr.com/polygon_mumbai",
-  "arbitrum": "https://sepolia-rollup.arbitrum.io/rpc	"
+  "arbitrum": "https://sepolia-rollup.arbitrum.io/rpc"
 } as const
 
 const Providers = ({ children, clientId }: { clientId: string, children: React.ReactNode }) => {

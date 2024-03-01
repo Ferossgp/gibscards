@@ -6,6 +6,7 @@ import {
 
 const zeroExUrlMap: { [networkId: number]: string } = {
   [Networks.SEPOLIA]: 'https://sepolia.api.0x.org/swap/v1/quote',
+  [Networks.POLYGON]: 'https://mumbai.api.0x.org/swap/v1/quote',
 };
 
 const ZERO_EX_API_KEY_HEADER = '0x-api-key';

@@ -13,4 +13,5 @@ export interface ZeroExSwapResponse {
 
 export const Networks = {
   SEPOLIA: 11155111,
+  POLYGON: 80001,
 };

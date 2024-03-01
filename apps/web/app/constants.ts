@@ -26,6 +26,7 @@ const ARBITRUM_GIBSCARD_CONTRACT = zeroAddress
 
 // NOTE: linea
 export type SupportedChains = 'sepolia' | 'base' | 'polygon' | 'arbitrum'
+export const allChains: SupportedChains[] = ['sepolia', 'base', 'polygon', 'arbitrum']
 
 export const MARKETPLACE_ADDRESSES: Record<SupportedChains, Address> = {
   sepolia: SEPOLIA_MARKETPLACE_ADDRESS,
