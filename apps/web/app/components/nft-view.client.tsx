@@ -21,11 +21,29 @@ import { MARKETPLACE_ABI } from "~/marketplace-abi";
 import { useActiveChain } from "~/context/Web3Provider.client";
 import { GiftCardStored } from "~/types";
 import { generateWithdrawProof } from "~/lib/zk";
+import { useMemo } from "react";
 
 const FAILED_NAME = "Failed to load NFT metadata";
 
+type RpcNftAsset = {
+  collectionName: string;
+  collectionTokenId: string;
+  collectionAddress: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  chain: string;
+  network: string;
+};
+
+type OurNFT = {
+  id: string;
+  name: string;
+  image: string;
+}
+
 const NftView: React.FC<{
-  nft: NFT;
+  nft: OurNFT;
   swapData?: string;
   nullifier: string;
   secret: string;
@@ -44,7 +62,7 @@ const NftView: React.FC<{
   const { data: directListing, isLoading: loadingDirect } =
     useValidDirectListings(marketplace, {
       tokenContract: NFT_CONTRACTS[chain],
-      tokenId: nft.metadata.id,
+      tokenId: nft.id,
     });
 
   const sendUserOperation = useUserOperation();
@@ -56,8 +74,8 @@ const NftView: React.FC<{
   const buyListing = async () => {
     let buyData;
     const listing = directListing?.[0];
+    console.log(listing);
     const address = primaryWallet?.address;
-
     if (listing && address) {
       buyData = encodeFunctionData({
         abi: MARKETPLACE_ABI,
@@ -99,24 +117,24 @@ const NftView: React.FC<{
     <Card>
       <CardHeader>
         <img
-          src={nft.metadata.image ?? ""}
-          alt={nft.metadata.name?.toString() ?? ""}
+          src={nft.image ?? ""}
+          alt={nft.name?.toString() ?? ""}
           className="rounded-2xl"
         />
       </CardHeader>
       <CardContent>
-        <h3 className="font-bold text-xl">{nft.metadata.name}</h3>
+        <h3 className="font-bold text-xl">{nft.name}</h3>
       </CardContent>
 
-      {directListing == null && loadingDirect ? (
+      {(directListing == null || directListing[0] == null) && loadingDirect ? (
         <CardFooter>
           <Loader2 className="w-6 h-6 animate-spin" />
         </CardFooter>
-      ) : (
+      ) : (directListing == null || directListing[0] == null) ? null : (
         <CardFooter className="justify-between">
           <p className="text-lg">
-            {directListing[0].currencyValuePerToken.displayValue}{" "}
-            {directListing[0].currencyValuePerToken.symbol}
+            {directListing[0]?.currencyValuePerToken.displayValue}{" "}
+            {directListing[0]?.currencyValuePerToken.symbol}
           </p>
           <Button size="sm" onClick={buyListing}>
             Buy
@@ -131,16 +149,35 @@ export default function NftGrid({
   value,
   swapContext,
   secret,
+  tokens,
 }: {
   value: GiftCardStored;
   secret: string;
   swapContext?: {
     data: string;
   };
+  tokens: OurNFT[]
 }) {
   const { chain } = useActiveChain();
   const { contract } = useContract(NFT_CONTRACTS[chain]);
-  const { data, isLoading } = useNFTs(contract, { count: 10 });
+  const { data } = useNFTs(tokens == null ? contract : undefined, { count: 10 });
+
+
+  const nfts = useMemo(() => {
+    if (tokens) return tokens
+
+    return data?.filter((e) => {
+      return e.metadata.name !== FAILED_NAME;
+    }).map((nft) => {
+      return {
+        id: nft.metadata.id,
+        name: nft.metadata.name?.toString() ?? "Unknown",
+        image: nft.metadata.image?.toString() ?? "",
+      }
+    });
+  }, [data, tokens]);
+
+  console.log({ nfts });
 
   return (
     <div className="flex flex-col gap-8 relative z-10">
@@ -151,27 +188,23 @@ export default function NftGrid({
         <h1 className="text-center text-xl">{value.message}</h1>
       </div>
 
-      {isLoading ? (
-        <div>Loading...</div>
+      {nfts == null ? (
+        <div><Loader2 className="w-6 h-6 animate-spin" /></div>
       ) : (
         <div className="grid grid-cols-4 gap-6">
-          {data
-            ?.filter((e) => {
-              return e.metadata.name !== FAILED_NAME;
-            })
-            .map((nft: NFT) => {
-              return (
-                <NftView
-                  key={nft.metadata.id}
-                  nft={nft}
-                  swapData={swapContext?.data}
-                  secret={secret}
-                  nullifier={value.nullifier}
-                  nullifierHex={value.nullifierHex}
-                  commitmentHex={value.commitmentHex}
-                />
-              );
-            })}
+          {nfts?.map((nft: OurNFT) => {
+            return (
+              <NftView
+                key={nft.id}
+                nft={nft}
+                swapData={swapContext?.data}
+                secret={secret}
+                nullifier={value.nullifier}
+                nullifierHex={value.nullifierHex}
+                commitmentHex={value.commitmentHex}
+              />
+            );
+          })}
         </div>
       )}
     </div>

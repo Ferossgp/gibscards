@@ -5,22 +5,23 @@ import { parseUnits } from "viem";
 
 import { Networks } from "~/lib/types";
 import { getZeroExSwapQuote } from "~/lib/zeroEx";
-import { SEPOLIA_WETH, USDC_CONTRACTS, USDC_DECIMALS } from "~/constants";
+import { NFT_CONTRACTS, SEPOLIA_UNI, USDC_CONTRACTS, USDC_DECIMALS } from "~/constants";
 import { ClientOnly } from "remix-utils/client-only";
 import NftGrid from "~/components/nft-view.client";
 import { GiftCardStored } from "~/types";
+import { getNFTsByCollection } from "~/lib/quicknode";
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const id = url.searchParams.get("id");
   const secret = url.searchParams.get("s");
 
-  const { MY_KV, ZERO_EX_API_KEY } = context.cloudflare.env;
+  const { MY_KV, ZERO_EX_API_KEY, QUICKNODE_NFT_API } = context.cloudflare.env;
 
   const quote = await getZeroExSwapQuote({
-    sellAmount: parseUnits("1", USDC_DECIMALS).toString(),
+    sellAmount: parseUnits("0.5", USDC_DECIMALS).toString(),
     sellToken: USDC_CONTRACTS["sepolia"],
-    buyTokenAddress: SEPOLIA_WETH,
+    buyTokenAddress: SEPOLIA_UNI,
     slippagePercentage: "0.05",
     networkId: Networks.SEPOLIA,
     apiKey: ZERO_EX_API_KEY,
@@ -36,8 +37,6 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
       value: null,
     });
   }
-
-  console.log({ quote: JSON.stringify(quote, null, 2) });
 
   const swapContext = {
     sellTokenAddress: quote.sellTokenAddress,
@@ -70,12 +69,21 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     });
   }
 
-  // const nfts = await getNFTsByCollection({ QUICKNODE_NFT_API, contract: SEPOLIA_CONTRACT })
+  const resp = await getNFTsByCollection({ QUICKNODE_NFT_API, contract: NFT_CONTRACTS['sepolia'] })
+
+  const nfts = resp?.tokens?.map((nft) => {
+    return {
+      id: nft.collectionTokenId,
+      name: nft.name,
+      image: nft.imageUrl
+    }
+  })
 
   return json({
     status: "success",
     message: value.message,
     swapContext,
+    nfts: nfts,
     value: value,
   });
 }
@@ -87,7 +95,7 @@ export default function Index() {
 
   return (
     <div className="mx-auto grid w-full max-w-6xl min-h-[90vh] pb-8 z-0">
-      <div className="p-4 relative overflow-hidden rounded-3xl border-2 border-neutral-900 bg-[#f3f2fa] w-full h-full">
+      <div className="p-8 relative overflow-hidden rounded-3xl border-2 border-neutral-900 bg-[#f3f2fa] w-full h-full">
         <div className="absolute bottom-0 right-0 left-0 w-full z-0 opacity-30 transition-all duration-1000 ease-in-out flex justify-center items-center">
           <img
             src="/assets/friends.svg"
@@ -103,6 +111,7 @@ export default function Index() {
           <ClientOnly>
             {() => (
               <NftGrid
+                tokens={loaderData.nfts}
                 swapContext={loaderData.swapContext}
                 value={loaderData.value}
                 secret={secret}
