@@ -170,7 +170,7 @@ export default function NftGrid({
 }) {
   const { chain } = useActiveChain();
   const { contract } = useContract(NFT_CONTRACTS[chain]);
-  const { data } = useNFTs(tokens == null ? contract : undefined, { count: 10 });
+  const { data } = useNFTs(chain !== 'sepolia' || tokens == null ? contract : undefined, { count: 10 });
 
   const nfts = useMemo(() => {
     // NOTE: Quicknode supports only sepolia
