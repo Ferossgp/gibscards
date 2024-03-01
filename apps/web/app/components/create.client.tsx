@@ -4,6 +4,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { useActionData, useSubmit } from "@remix-run/react";
 import { GIBSCARD_CONTRACTS, USDC_CONTRACTS, USDC_DECIMALS } from "~/constants";
 import {
+  Chain,
   Client,
   CustomTransport,
   JsonRpcAccount,
@@ -18,7 +19,7 @@ import { generateDeposit, generateWithdrawProof } from "~/lib/zk";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { sepolia } from "viem/chains";
 import { match } from "ts-pattern";
-import { useActiveChain } from "~/context/Web3Provider.client";
+import { VIEM_CHAINS, useActiveChain } from "~/context/Web3Provider.client";
 import QRCode from "react-qr-code";
 
 type EthereumProvider = { request(...args: any): Promise<any> };
@@ -32,7 +33,7 @@ export default function CreateView() {
   const { primaryWallet } = useDynamicContext();
   const [client, setClient] = useState<Client<
     CustomTransport,
-    typeof sepolia,
+    Chain,
     JsonRpcAccount<`0x${string}`>
   > | null>(null);
   const [step, setStep] = useState("idle");
@@ -49,14 +50,14 @@ export default function CreateView() {
 
       setClient(
         createWalletClient({
-          chain: sepolia,
+          chain: VIEM_CHAINS[chain],
           account: getAddress(address),
           transport: custom(signer as EthereumProvider),
         })
       );
     };
     init();
-  }, [primaryWallet]);
+  }, [chain, primaryWallet]);
 
   const onSubmit = async () => {
     if (!selected || !client || !publicClient) return;

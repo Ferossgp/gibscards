@@ -28,7 +28,7 @@ const THIRD_WEB_CHAINS = {
   "arbitrum": ArbitrumSepolia
 } as const
 
-const VIEM_CHAINS = {
+export const VIEM_CHAINS = {
   "sepolia": ViemChains.sepolia,
   "base": ViemChains.baseSepolia,
   "polygon": ViemChains.polygonMumbai,
