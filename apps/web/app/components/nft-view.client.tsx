@@ -67,60 +67,64 @@ const NftView: React.FC<{
 
   const buyListing = async () => {
     setLoading(true);
-    let buyData;
-    const listing = directListing?.[0];
-    const address = primaryWallet?.address;
-    if (listing && address) {
-      buyData = encodeFunctionData({
-        abi: MARKETPLACE_ABI,
-        functionName: "buyFromListing",
+    try {
+      return
+      let buyData;
+      const listing = directListing?.[0];
+      const address = primaryWallet?.address;
+      if (listing && address) {
+        buyData = encodeFunctionData({
+          abi: MARKETPLACE_ABI,
+          functionName: "buyFromListing",
+          args: [
+            BigInt(listing.id),
+            getAddress(address),
+            1n,
+            getAddress(listing.currencyContractAddress),
+            BigInt(listing.pricePerToken),
+          ],
+        });
+      } else {
+        throw new Error("No valid listing found for this NFT");
+      }
+
+      const recipient = address // Keep the gibscard contract
+      const proof = await generateWithdrawProof({
+        nullifierHex: nullifierHex,
+        commitmentHex: commitmentHex,
+        nullifier: nullifier,
+        secret: secret
+      }, recipient)
+
+      const needsSwap = true
+
+      const transaction = encodeFunctionData({
+        abi: gibscardsAbi,
+        functionName: "withdraw",
         args: [
-          BigInt(listing.id),
-          getAddress(address),
-          1n,
+          proof as any,
+          nullifierHex as '0x${string}',
+          commitmentHex as '0x${string}',
+          recipient as '0x${string}',
+          (swapData ?? '0x0') as '0x${string}',
           getAddress(listing.currencyContractAddress),
-          BigInt(listing.pricePerToken),
-        ],
-      });
-    } else {
-      throw new Error("No valid listing found for this NFT");
+          buyData,
+          needsSwap
+        ]
+      })
+
+      await sendUserOperation([
+        {
+          data: transaction,
+          value: BigInt(0),
+          target: GIBSCARD_CONTRACTS[chain],
+        },
+      ]);
+
+      navigate(`/profile?success=true`);
+    } finally {
+      setLoading(false);
     }
-
-    const recipient = address // Keep the gibscard contract
-    const proof = await generateWithdrawProof({
-      nullifierHex: nullifierHex,
-      commitmentHex: commitmentHex,
-      nullifier: nullifier,
-      secret: secret
-    }, recipient)
-
-    const needsSwap = true
-
-    const transaction = encodeFunctionData({
-      abi: gibscardsAbi,
-      functionName: "withdraw",
-      args: [
-        proof as any,
-        nullifierHex as '0x${string}',
-        commitmentHex as '0x${string}',
-        recipient as '0x${string}',
-        (swapData ?? '0x0') as '0x${string}',
-        getAddress(listing.currencyContractAddress),
-        buyData,
-        needsSwap
-      ]
-    })
-
-    await sendUserOperation([
-      {
-        data: transaction,
-        value: BigInt(0),
-        target: GIBSCARD_CONTRACTS[chain],
-      },
-    ]);
-
-    setLoading(false);
-    navigate(`/profile?success=true`);
   };
 
   return (
