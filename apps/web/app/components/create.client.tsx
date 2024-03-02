@@ -21,6 +21,7 @@ import { sepolia } from "viem/chains";
 import { match } from "ts-pattern";
 import { VIEM_CHAINS, useActiveChain } from "~/context/Web3Provider.client";
 import QRCode from "react-qr-code";
+import { switchChain } from "@wagmi/core";
 
 type EthereumProvider = { request(...args: any): Promise<any> };
 
@@ -63,27 +64,30 @@ export default function CreateView() {
     if (!selected || !client || !publicClient) return;
     setStep("loading");
     const deposit = await generateDeposit();
+
+    await client.switchChain({ id: VIEM_CHAINS[chain].id });
+
     // const proof = await generateWithdrawProof({
     //   nullifierHex: deposit.nullifierHex,
     //   commitmentHex: deposit.commitmentHex,
     //   nullifier: deposit.nullifier.toString(),
     //   secret: deposit.secret.toString()
     // }, "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238");
-    setStep("approving");
+    // setStep("approving");
 
-    const approve = await client.sendTransaction({
-      data: encodeFunctionData({
-        abi: ierc20Abi,
-        functionName: "approve",
-        args: [
-          GIBSCARD_CONTRACTS[chain],
-          parseUnits(selected.toString(), USDC_DECIMALS),
-        ],
-      }),
-      to: USDC_CONTRACTS[chain],
-    });
+    // const approve = await client.sendTransaction({
+    //   data: encodeFunctionData({
+    //     abi: ierc20Abi,
+    //     functionName: "approve",
+    //     args: [
+    //       GIBSCARD_CONTRACTS[chain],
+    //       parseUnits(selected.toString(), USDC_DECIMALS),
+    //     ],
+    //   }),
+    //   to: USDC_CONTRACTS[chain],
+    // });
 
-    await publicClient.waitForTransactionReceipt({ hash: approve });
+    // await publicClient.waitForTransactionReceipt({ hash: approve });
 
     setStep("sending");
 

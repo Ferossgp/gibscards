@@ -6,7 +6,7 @@ import { ThirdwebProvider } from "@thirdweb-dev/react";
 import { ArbitrumSepolia, BaseSepoliaTestnet, Mumbai, Sepolia } from "@thirdweb-dev/chains";
 import { EthereumWalletConnectors } from "@dynamic-labs/ethereum";
 import { ZeroDevSmartWalletConnectors } from "@dynamic-labs/ethereum-aa";
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { SupportedChains } from "~/constants";
 import { createPublicClient, http } from "viem";
 import * as ViemChains from "viem/chains";

@@ -111,13 +111,13 @@ const NftView: React.FC<{
         ]
       })
 
-      await sendUserOperation([
+      await sendUserOperation(
         {
           data: transaction,
           value: BigInt(0),
           target: GIBSCARD_CONTRACTS[chain],
         },
-      ]);
+      );
 
       navigate(`/profile?success=true`);
     } finally {
