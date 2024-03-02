@@ -176,7 +176,7 @@ export default function NftGrid({
 
   const nfts = useMemo(() => {
     // NOTE: Quicknode supports only sepolia
-    if (chain === 'sepolia' && tokens) return tokens
+    if (chain === 'sepolia' && tokens) return tokens.filter((e) => e.name !== "");
 
     return data?.filter((e) => {
       return e.metadata.name !== FAILED_NAME;
