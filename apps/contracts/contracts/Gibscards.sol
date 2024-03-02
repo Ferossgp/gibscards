@@ -147,11 +147,6 @@ contract Gibscards is ReentrancyGuard {
 
         swapNFT(nftSwapCallData, IERC20(_buyToken));
 
-        // commitments[_commitment].token.safeTransfer(
-        //     _recipient,
-        //     commitments[_commitment].denomination
-        // );
-
         emit Withdrawal(_recipient, _nullifierHash);
     }
 
@@ -177,16 +172,6 @@ contract Gibscards is ReentrancyGuard {
         bytes calldata nftSwapCallData,
         IERC20 _buyToken
     ) internal {
-        require(_buyToken.approve(marketplaceAddr, type(uint256).max));
-
-        (bool success, ) = marketplaceAddr.call(nftSwapCallData);
-        require(success, "NFT_CALL_FAILED");
-    }
-
-    function swapNFT2(
-        bytes calldata nftSwapCallData,
-        IERC20 _buyToken
-    ) external {
         require(_buyToken.approve(marketplaceAddr, type(uint256).max));
 
         (bool success, ) = marketplaceAddr.call(nftSwapCallData);
